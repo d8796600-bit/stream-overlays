@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goal Bar - Zelda/Mario</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Cinzel', serif;
+    overflow: hidden;
+  }
+
+  /* ===================== MODO SELECTOR ===================== */
+  .mode-selector {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    z-index: 999;
+  }
+  .mode-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+    transition: all 0.3s;
+  }
+  .mode-btn.moon   { background: #9b59b6; color: white; }
+  .mode-btn.star   { background: #f39c12; color: #1a0a00; }
+  .mode-btn.rupee  { background: #27ae60; color: white; }
+  .mode-btn.active { transform: scale(1.15); box-shadow: 0 0 12px currentColor; }
+
+  /* ===================== CONTENEDOR GLOBAL ===================== */
+  .goal-container {
+    width: 420px;
+    padding: 18px 22px 14px;
+    border-radius: 16px;
+    position: relative;
+    animation: fadeIn 0.8s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ---- Título ---- */
+  .goal-title {
+    text-align: center;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    text-shadow: 0 0 12px currentColor;
+  }
+
+  /* ---- Icono + Valores ---- */
+  .goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .goal-icon {
+    font-size: 26px;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 8px currentColor);
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-5px); }
+  }
+  .goal-values {
+    font-size: 12px;
+    letter-spacing: 1px;
+    opacity: 0.85;
+  }
+  .goal-current { font-size: 22px; font-weight: 900; }
+  .goal-slash   { opacity: 0.5; margin: 0 3px; }
+  .goal-total   { font-size: 14px; opacity: 0.7; }
+
+  /* ---- Barra de progreso ---- */
+  .bar-track {
+    width: 100%;
+    height: 22px;
+    border-radius: 30px;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid;
+    box-shadow: 0 0 14px currentColor, inset 0 2px 6px rgba(0,0,0,0.5);
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 30px;
+    position: relative;
+    transition: width 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+    overflow: hidden;
+  }
+  /* Brillo interno en la barra */
+  .bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 6px;
+    right: 6px; height: 6px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.35);
+  }
+  /* Partícula de borde derecho */
+  .bar-fill::before {
+    content: '';
+    position: absolute;
+    right: -2px; top: 0;
+    width: 6px; height: 100%;
+    background: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+
+  /* ---- Porcentaje ---- */
+  .bar-percent {
+    text-align: center;
+    font-size: 10px;
+    margin-top: 5px;
+    letter-spacing: 2px;
+    opacity: 0.7;
+  }
+
+  /* ---- Mensaje de llamada ---- */
+  .goal-message {
+    text-align: center;
+    font-size: 11px;
+    margin-top: 8px;
+    letter-spacing: 1px;
+    font-style: italic;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+  @keyframes shimmer { 0%,100%{opacity:0.7} 50%{opacity:1} }
+
+  /* ===================== TEMA 1: LUNA / MAJORA'S MASK ===================== */
+  body.theme-moon .goal-container {
+    background: linear-gradient(160deg, #1a0a2e 0%, #0d0518 60%, #1f0a35 100%);
+    border: 2px solid #6b3fa0;
+    box-shadow: 0 0 30px rgba(107,63,160,0.4), inset 0 0 20px rgba(0,0,0,0.3);
+  }
+  body.theme-moon .goal-title { color: #c77dff; }
+  body.theme-moon .goal-icon  { color: #ff9800; }
+  body.theme-moon .goal-values, .theme-moon .bar-percent,
+  body.theme-moon .goal-message { color: #e0c0ff; }
+  body.theme-moon .goal-current { color: #ff9800; }
+  body.theme-moon .bar-track {
+    background: #0d0518;
+    border-color: #6b3fa0;
+    box-shadow: 0 0 14px rgba(107,63,160,0.5), inset 0 2px 6px rgba(0,0,0,0.5);
+  }
+  body.theme-moon .bar-fill {
+    background: linear-gradient(90deg, #6b3fa0, #9b59b6, #c77dff, #ff9800);
+    background-size: 300% 100%;
+    animation: moonFlow 3s linear infinite;
+  }
+  @keyframes moonFlow {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+  }
+  /* Estrellas decorativas fondo */
+  body.theme-moon .goal-container::before {
+    content: '✦ ✧ ✦ ✧ ✦ ✧ ✦';
+    position: absolute;
+    top: 6px; left: 0; right: 0;
+    text-align: center;
+    font-size: 7px;
+    color: rgba(199,125,255,0.3);
+    letter-spacing: 4px;
+  }
+
+  /* ===================== TEMA 2: POWER STAR / MARIO 64 ===================== */
+  body.theme-star .goal-container {
+    background: linear-gradient(160deg, #1a0e00 0%, #0d0900 60%, #1f1200 100%);
+    border: 2px solid #c8900a;
+    box-shadow: 0 0 30px rgba(243,156,18,0.4), inset 0 0 20px rgba(0,0,0,0.3);
+  }
+  body.theme-star .goal-title { color: #ffe066; }
+  body.theme-star .goal-icon  { color: #ffe066; }
+  body.theme-star .goal-values, .theme-star .bar-percent,
+  body.theme-star .goal-message { color: #ffd580; }
+  body.theme-star .goal-current { color: #fff176; }
+  body.theme-star .bar-track {
+    background: #0d0900;
+    border-color: #c8900a;
+    box-shadow: 0 0 14px rgba(200,144,10,0.5), inset 0 2px 6px rgba(0,0,0,0.5);
+  }
+  body.theme-star .bar-fill {
+    background: linear-gradient(90deg, #b8670a, #f39c12, #ffe066, #fff9c4, #f39c12);
+    background-size: 300% 100%;
+    animation: starFlow 2s linear infinite;
+  }
+  @keyframes starFlow {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+  }
+  body.theme-star .goal-container::before {
+    content: '★ ☆ ★ ☆ ★ ☆ ★';
+    position: absolute;
+    top: 6px; left: 0; right: 0;
+    text-align: center;
+    font-size: 8px;
+    color: rgba(255,224,102,0.3);
+    letter-spacing: 4px;
+  }
+
+  /* ===================== TEMA 3: RUPIAS / ZELDA ===================== */
+  body.theme-rupee .goal-container {
+    background: linear-gradient(160deg, #001a0a 0%, #000d05 60%, #001a10 100%);
+    border: 2px solid #27ae60;
+    box-shadow: 0 0 30px rgba(39,174,96,0.4), inset 0 0 20px rgba(0,0,0,0.3);
+  }
+  body.theme-rupee .goal-title { color: #2ecc71; }
+  body.theme-rupee .goal-icon  { color: #2ecc71; }
+  body.theme-rupee .goal-values, .theme-rupee .bar-percent,
+  body.theme-rupee .goal-message { color: #a9f0c2; }
+  body.theme-rupee .goal-current { color: #2ecc71; }
+  body.theme-rupee .bar-track {
+    background: #000d05;
+    border-color: #27ae60;
+    box-shadow: 0 0 14px rgba(39,174,96,0.5), inset 0 2px 6px rgba(0,0,0,0.5);
+  }
+  body.theme-rupee .bar-fill {
+    background: linear-gradient(90deg, #1a7a3f, #27ae60, #2ecc71, #a9f0c2, #27ae60);
+    background-size: 300% 100%;
+    animation: rupeeFlow 2.5s linear infinite;
+  }
+  @keyframes rupeeFlow {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+  }
+  body.theme-rupee .goal-container::before {
+    content: '◆ ◇ ◆ ◇ ◆ ◇ ◆';
+    position: absolute;
+    top: 6px; left: 0; right: 0;
+    text-align: center;
+    font-size: 7px;
+    color: rgba(46,204,113,0.3);
+    letter-spacing: 4px;
+  }
+
+  /* ---- Efecto de completado ---- */
+  .bar-complete .bar-fill {
+    animation: celebrate 0.5s ease-in-out infinite alternate !important;
+  }
+  @keyframes celebrate {
+    from { filter: brightness(1); }
+    to   { filter: brightness(1.4) saturate(1.5); }
+  }
+  .complete-msg {
+    display: none;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 900;
+    margin-top: 6px;
+    animation: shimmer 0.8s ease-in-out infinite;
+    letter-spacing: 2px;
+  }
+  .bar-complete ~ .complete-msg { display: block; }
+</style>
+</head>
+<body class="theme-moon">
+
+<!-- Selector de tema (solo visible en modo de configuración, ocultar en stream) -->
+<div class="mode-selector">
+  <button class="mode-btn moon active"  onclick="setTheme('moon')">🌙 Luna</button>
+  <button class="mode-btn star"         onclick="setTheme('star')">⭐ Estrella</button>
+  <button class="mode-btn rupee"        onclick="setTheme('rupee')">💎 Rupia</button>
+</div>
+
+<!-- ===== BARRA PRINCIPAL ===== -->
+<div class="goal-container" id="goalContainer">
+
+  <div class="goal-title" id="goalTitle">⚔️ Guerreros del Tiempo ⚔️</div>
+
+  <div class="goal-header">
+    <span class="goal-icon" id="goalIcon">🌙</span>
+    <div class="goal-values">
+      <span class="goal-current" id="currentVal">0</span>
+      <span class="goal-slash">/</span>
+      <span class="goal-total"  id="totalVal">20</span>
+    </div>
+  </div>
+
+  <div class="bar-track" id="barTrack">
+    <div class="bar-fill" id="barFill" style="width: 0%"></div>
+  </div>
+
+  <div class="bar-percent" id="barPercent">0% completado</div>
+  <div class="goal-message" id="goalMessage">🌙 ¡Ayuda a detener la luna! Dona una rupia 💎</div>
+  <div class="complete-msg" id="completeMsg">🎉 ¡OBJETIVO ALCANZADO! 🎉</div>
+</div>
+
+<script>
+  // =====================================================================
+  //  CONFIGURACIÓN — EDITA SOLO ESTA SECCIÓN
+  // =====================================================================
+  const CONFIG = {
+    // Tema visual: 'moon' | 'star' | 'rupee'
+    theme: 'moon',
+
+    // Valor actual y objetivo
+    current: 12,
+    total:   20,
+
+    // Textos personalizados por tema
+    themes: {
+      moon: {
+        title:   '🌙 ¡Detén la Luna! 🌙',
+        icon:    '🌙',
+        message: '¡Dona una rupia para salvar Termina! 💜',
+        complete:'🎉 ¡Termina está a salvo! ¡Gracias! 🎉'
+      },
+      star: {
+        title:   '⭐ Poder de las Estrellas ⭐',
+        icon:    '⭐',
+        message: '¡Envía una estrella para avanzar al siguiente mundo! 🍄',
+        complete:'🌟 ¡Nivel completado! ¡Gracias héroes! 🌟'
+      },
+      rupee: {
+        title:   '💎 Rupias del Tiempo 💎',
+        icon:    '💎',
+        message: '¡Cada rupia nos acerca a la victoria, héroe! ⚔️',
+        complete:'💎 ¡Cofre del tesoro abierto! ¡Gracias! 💎'
+      }
+    }
+  };
+  // =====================================================================
+
+  function setTheme(theme) {
+    CONFIG.theme = theme;
+    document.body.className = 'theme-' + theme;
+    const t = CONFIG.themes[theme];
+    document.getElementById('goalTitle').textContent   = t.title;
+    document.getElementById('goalIcon').textContent    = t.icon;
+    document.getElementById('goalMessage').textContent = t.message;
+    document.getElementById('completeMsg').textContent = t.complete;
+
+    // Actualizar botones
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.mode-btn.' + theme).classList.add('active');
+
+    updateBar(CONFIG.current, CONFIG.total);
+  }
+
+  function updateBar(current, total) {
+    const pct = Math.min(100, Math.round((current / total) * 100));
+    document.getElementById('currentVal').textContent = current;
+    document.getElementById('totalVal').textContent   = total;
+    document.getElementById('barFill').style.width   = pct + '%';
+    document.getElementById('barPercent').textContent = pct + '% completado';
+
+    const track = document.getElementById('barTrack');
+    if (pct >= 100) {
+      track.classList.add('bar-complete');
+    } else {
+      track.classList.remove('bar-complete');
+    }
+  }
+
+  // ---- Inicializar ----
+  setTheme(CONFIG.theme);
+  updateBar(CONFIG.current, CONFIG.total);
+
+  // ---- API de Tikfinity (cuando tengas la clave) ----
+  // Descomenta y reemplaza YOUR_API_KEY y YOUR_GOAL_ID:
+  /*
+  async function fetchTikfinityGoal() {
+    try {
+      const res  = await fetch('https://tikfinity.zerody.one/api/v1/goal/YOUR_GOAL_ID', {
+        headers: { 'Authorization': 'Bearer YOUR_API_KEY' }
+      });
+      const data = await res.json();
+      updateBar(data.current, data.target);
+    } catch(e) { console.warn('Tikfinity API error', e); }
+  }
+  // Actualiza cada 10 segundos
+  fetchTikfinityGoal();
+  setInterval(fetchTikfinityGoal, 10000);
+  */
+</script>
+</body>
+</html>
